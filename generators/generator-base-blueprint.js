@@ -87,7 +87,7 @@ module.exports = class extends BaseGenerator {
                 if (extraOptions) {
                     bpOptions = { ...bpOptions, ...extraOptions };
                 }
-                const useBP = this.composeBlueprint(blueprint.name, subGen, bpOptions);
+                const useBP = this.composeBlueprint(blueprint, subGen, bpOptions);
                 if (!useBlueprints && useBP) {
                     useBlueprints = true;
                 }

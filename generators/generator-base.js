@@ -1092,14 +1092,17 @@ module.exports = class extends PrivateBase {
      * @param {any} options - options to pass
      */
     composeExternalModule(npmPackageName, subGen, options) {
-        let generatorTocall = path.join(process.cwd(), 'node_modules', npmPackageName, 'generators', subGen);
         try {
-            if (!fs.existsSync(generatorTocall)) {
-                this.debug('using global module as local version could not be found in node_modules');
-                generatorTocall = path.join(npmPackageName, 'generators', subGen);
+            const generatorToCall = path.join(process.cwd(), 'node_modules', npmPackageName, 'generators', subGen);
+            if (fs.existsSync(generatorToCall)) {
+                this.info(`Running yeoman compose for generator: ${generatorToCall} with options: ${options}`);
+                this.composeWith(require.resolve(generatorToCall), options);
+            } else {
+                this.info('using global module as local version could not be found in node_modules');
+                const generatorName = `${npmPackageName.replace('generator-', '')}:${subGen}`;
+                this.info(`Running yeoman compose for generator: ${generatorName} with options: ${options}`);
+                this.composeWith(generatorName, options);
             }
-            this.debug('Running yeoman compose with options: ', generatorTocall, options);
-            this.composeWith(require.resolve(generatorTocall), options);
         } catch (err) {
             this.debug('ERROR:', err);
             const generatorName = npmPackageName.replace('generator-', '');

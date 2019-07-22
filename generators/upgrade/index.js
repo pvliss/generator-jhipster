@@ -70,7 +70,7 @@ module.exports = class extends BaseGenerator {
         });
 
         this.targetJhipsterVersion = this.options['target-version'];
-        this.targetBlueprintVersions = utils.parseBluePrints(this.options['target-blueprint-versions']);
+        this.targetBlueprintVersions = this._parseTargetBluePrintVersions(this.options['target-blueprint-versions']);
         this.skipInstall = this.options['skip-install'];
         this.silent = this.options.silent;
     }
@@ -89,7 +89,7 @@ module.exports = class extends BaseGenerator {
             loadConfig() {
                 this.config = this.getAllJhipsterConfig(this, true);
                 this.currentJhipsterVersion = this.config.get('jhipsterVersion');
-                this.blueprints = utils.loadBlueprintsFromConfiguration(this);
+                this.blueprints = this._loadBlueprintsFromConfiguration();
                 this.clientPackageManager = this.config.get('clientPackageManager');
                 this.clientFramework = this.config.get('clientFramework');
             }
@@ -191,6 +191,55 @@ module.exports = class extends BaseGenerator {
         });
     }
 
+    _loadBlueprintsFromConfiguration() {
+        // const filePath = path.join(process.cwd(), 'package.json');
+        // const packagejs = JSON.parse(fs.readFileSync(filePath, { encoding: 'utf-8' }));
+        return utils.loadBlueprintsFromConfiguration(this).map(blueprint => {
+            let bpVersion = this.findBlueprintVersion(blueprint);
+            if (bpVersion === '') bpVersion = 'latest';
+            return {
+                name: blueprint,
+                version: bpVersion
+            };
+        });
+    }
+
+    /**
+     * Splits and normalizes a comma separated list of blueprint names with optional versions.
+     * @param {string} blueprints - comma separated list of blueprint names, e.g kotlin,vuewjs@1.0.1. If an array then
+     * no processing is performed and it is returned as is.
+     * @returns {Array} an array that contains the info for each blueprint
+     */
+    _parseTargetBluePrintVersions(blueprints) {
+        if (blueprints) {
+            return blueprints
+                .split(',')
+                .filter(el => el != null && el.length > 0)
+                .map(blueprint => this._parseBlueprintInfo(blueprint));
+        }
+        return blueprints;
+    }
+
+    /**
+     * Normalize blueprint name if needed and also extracts version if defined. If no version is defined then `latest`
+     * is used by default.
+     * @param {string} blueprint - name of the blueprint and optionally a version, e.g kotlin[@0.8.1]
+     * @returns {object} containing the name and version of the blueprint
+     */
+    _parseBlueprintInfo(blueprint) {
+        let bpName = utils.normalizeBlueprintName(blueprint);
+        let version = 'latest';
+        const idx = bpName.lastIndexOf('@');
+        if (idx > 0) {
+            version = bpName.slice(idx + 1);
+            bpName = bpName.slice(0, idx);
+        }
+        return {
+            name: bpName,
+            version
+        };
+    }
+
     get configuring() {
         return {
             assertJHipsterProject() {
@@ -211,7 +260,7 @@ module.exports = class extends BaseGenerator {
 
             checkLatestBlueprintVersions() {
                 if (!this.blueprints || this.blueprints.length < 0) {
-                    this.log('No blueprints detected, skipping check of last blueprint version');
+                    this.log('No blueprints detected, skipping check of new version of blueprints');
                     return;
                 }
 

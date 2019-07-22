@@ -157,6 +157,14 @@ describe('JHipster entity generator with multiple blueprints', () => {
             it('contains the specific change added by the server blueprint', () => {
                 assert.fileContent('pom.xml', /dummy-blueprint-property/);
             });
+
+            it('blueprint names are saved in .yo-rc.json', () => {
+                assert.JSONFileContent('.yo-rc.json', {
+                    'generator-jhipster': {
+                        blueprints: ['generator-jhipster-my-client-blueprint', 'generator-jhipster-my-server-blueprint']
+                    }
+                });
+            });
         });
     });
 });

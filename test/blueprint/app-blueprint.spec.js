@@ -59,9 +59,9 @@ describe('JHipster application generator with blueprint', () => {
             );
         });
 
-        it('blueprint version is saved in .yo-rc.json', () => {
+        it('blueprint name is saved in .yo-rc.json', () => {
             assert.JSONFileContent('.yo-rc.json', {
-                'generator-jhipster': { blueprints: [{ name: 'generator-jhipster-myblueprint', version: '9.9.9' }] }
+                'generator-jhipster': { blueprints: ['generator-jhipster-myblueprint'] }
             });
         });
         it('blueprint module and version are in package.json', () => {

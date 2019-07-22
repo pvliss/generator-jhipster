@@ -165,7 +165,7 @@ describe('JHipster upgrade generator', function() {
 
         it('still contains blueprint information', () => {
             assert.JSONFileContent('.yo-rc.json', {
-                'generator-jhipster': { blueprints: [{ name: blueprintName, version: blueprintVersion }] }
+                'generator-jhipster': { blueprints: [blueprintName] }
             });
             assert.fileContent('package.json', new RegExp(`"${blueprintName}": "${blueprintVersion}"`));
         });

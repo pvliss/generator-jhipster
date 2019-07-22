@@ -776,7 +776,7 @@ module.exports = class extends Generator {
                     ...options,
                     jhipsterContext: this
                 };
-                this.useBlueprint = true;
+                this.useBlueprints = true;
                 this.composeExternalModule(blueprint, subGen, finalOptions);
                 this.info(`Using blueprint ${chalk.yellow(blueprint)} for ${chalk.yellow(subGen)} subgenerator`);
                 return true;
@@ -822,11 +822,13 @@ module.exports = class extends Generator {
         const done = this.async();
         const localModule = path.join(process.cwd(), 'node_modules', blueprint);
         if (fs.existsSync(localModule)) {
+            this.debug(`Using locally installed blueprint: ${localModule}`);
             done();
             return;
         }
         const generatorName = blueprint.replace('generator-', '');
         if (this.env.get(`${generatorName}:${subGen}`)) {
+            this.debug(`Using env configured blueprint: ${generatorName}`);
             done();
             return;
         }
