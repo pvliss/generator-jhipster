@@ -1,9 +1,11 @@
 const path = require('path');
+const fse = require('fs-extra');
 const assert = require('yeoman-assert');
 const helpers = require('yeoman-test');
 const expectedFiles = require('../utils/expected-files');
 const ClientGenerator = require('../../generators/client');
 const ServerGenerator = require('../../generators/server');
+const EntityGenerator = require('../../generators/entity');
 
 const mockClientBlueprintSubGen = class extends ClientGenerator {
     constructor(args, opts) {
@@ -35,6 +37,7 @@ const mockClientBlueprintSubGen = class extends ClientGenerator {
         const customPhaseSteps = {
             addDummyProperty() {
                 this.addNpmDependency('dummy-blueprint-property', '2.0');
+                this.addNpmDependency('client-blueprint-property', this.jhiPrefix);
             }
         };
         return {
@@ -103,10 +106,61 @@ const mockServerBlueprintSubGen = class extends ServerGenerator {
     }
 };
 
+const mockEntityBlueprintSubGen = class extends EntityGenerator {
+    constructor(args, opts) {
+        super(args, Object.assign({ fromBlueprint: true }, opts)); // fromBlueprint variable is important
+    }
+
+    get initializing() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._initializing();
+    }
+
+    get writing() {
+        const phaseFromJHipster = super._writing();
+        const customPhaseSteps = {
+            verifyProperty() {
+                // These configs should be loaded by _initializing.getConfig()
+                this.addNpmDependency('entity-context-enable-translation', this.context.enableTranslation !== undefined);
+                this.addNpmDependency('entity-context-jhi-prefix', this.context.jhiPrefix);
+            }
+        };
+        return {
+            ...phaseFromJHipster,
+            ...customPhaseSteps
+        };
+    }
+
+    get prompting() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._prompting();
+    }
+
+    get configuring() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._configuring();
+    }
+
+    get default() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._default();
+    }
+
+    get install() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._install();
+    }
+
+    get end() {
+        // Here we are not overriding this phase and hence its being handled by JHipster
+        return super._end();
+    }
+};
+
 describe('JHipster entity generator with multiple blueprints', () => {
     const blueprintNames = [
-        'generator-jhipster-my-client-blueprint,generator-jhipster-my-server-blueprint',
-        'my-client-blueprint,my-server-blueprint'
+        'generator-jhipster-my-client-blueprint,generator-jhipster-my-server-blueprint,generator-jhipster-my-entity-blueprint',
+        'my-client-blueprint,my-server-blueprint,my-entity-blueprint'
     ];
 
     blueprintNames.forEach(blueprints => {
@@ -114,15 +168,20 @@ describe('JHipster entity generator with multiple blueprints', () => {
             before(done => {
                 helpers
                     .run(path.join(__dirname, '../../generators/app'))
+                    .inTmpDir(dir => {
+                        fse.copySync(path.join(__dirname, '../../test/templates/multiple-blueprints'), dir);
+                    })
                     .withOptions({
                         'from-cli': true,
                         skipInstall: true,
                         skipChecks: true,
+                        'with-entities': true,
                         blueprints
                     })
                     .withGenerators([
                         [mockClientBlueprintSubGen, 'jhipster-my-client-blueprint:client'],
-                        [mockServerBlueprintSubGen, 'jhipster-my-server-blueprint:server']
+                        [mockServerBlueprintSubGen, 'jhipster-my-server-blueprint:server'],
+                        [mockEntityBlueprintSubGen, 'jhipster-my-entity-blueprint:entity']
                     ])
                     .withPrompts({
                         baseName: 'jhipster',
@@ -138,7 +197,7 @@ describe('JHipster entity generator with multiple blueprints', () => {
                         prodDatabaseType: 'mysql',
                         enableTranslation: true,
                         nativeLanguage: 'en',
-                        languages: ['fr']
+                        languages: ['en', 'fr']
                     })
                     .on('end', done);
             });
@@ -152,10 +211,25 @@ describe('JHipster entity generator with multiple blueprints', () => {
 
             it('contains the specific change added by the client blueprint', () => {
                 assert.fileContent('package.json', /dummy-blueprint-property/);
+                assert.JSONFileContent('package.json', {
+                    dependencies: { 'client-blueprint-property': 'myJhi' }
+                });
             });
 
             it('contains the specific change added by the server blueprint', () => {
                 assert.fileContent('pom.xml', /dummy-blueprint-property/);
+            });
+
+            it('contains entity-context-enable-translation change added by the entity blueprint', () => {
+                assert.JSONFileContent('package.json', {
+                    dependencies: { 'entity-context-enable-translation': true }
+                });
+            });
+
+            it('contains entity-context-jhi-prefix change added by the entity blueprint', () => {
+                assert.JSONFileContent('package.json', {
+                    dependencies: { 'entity-context-jhi-prefix': 'myJhi' }
+                });
             });
         });
     });

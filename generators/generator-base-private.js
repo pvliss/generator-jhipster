@@ -776,7 +776,7 @@ module.exports = class extends Generator {
                     ...options,
                     jhipsterContext: this
                 };
-                this.useBlueprint = true;
+                this.useBlueprints = true;
                 this.composeExternalModule(blueprint, subGen, finalOptions);
                 this.info(`Using blueprint ${chalk.yellow(blueprint)} for ${chalk.yellow(subGen)} subgenerator`);
                 return true;
